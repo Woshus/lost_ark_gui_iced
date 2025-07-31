@@ -81,7 +81,7 @@ pub fn get_table_selection(menu_type: &home::MenuType) -> Element<'static, home:
 }
 pub fn price_entry<P: Into<PathBuf>>(
     path: P,
-    mat_costs: &HashMap<String, String>,    
+    mat_costs: &HashMap<String, String>,
     key: String,
 ) -> Element<home::Message> {
     let display_value = mat_costs.get(&key);
@@ -99,8 +99,9 @@ pub fn price_entry<P: Into<PathBuf>>(
         .align_y(Alignment::Center)
         .into()
 }
-pub fn crafting_entry<F>(
-    handle: image::Handle,
+pub fn crafting_entry<F, P>(
+    mat_img_path: P,
+    item_img_path: P,
     cost1: f32,
     cost2: f32,
     cost3: f32,
@@ -110,20 +111,31 @@ pub fn crafting_entry<F>(
 ) -> Element<'static, home::Message>
 where
     F: Fn(f32, f32, f32) -> f32,
+    P: Into<PathBuf>,
 {
-    let image = Image::new(handle)
-        .width(Length::FillPortion(1))
+    let mat_handle = image::Handle::from_path(mat_img_path);
+    let item_handle = image::Handle::from_path(item_img_path);
+    let mat_image = Image::new(mat_handle)
+        .height(Length::FillPortion(1));
+    let item_image = Image::new(item_handle)
         .height(Length::FillPortion(1));
 
+    let item_row = Row::new()
+        .push(mat_image)
+        .push(item_image)
+        .width(Length::FillPortion(1))
+        .height(Length::FillPortion(1))
+        .spacing(10);
+
     let cost = formula(cost1, cost2, cost3);
-    // 5% market fee = (0.95*revenue).floor(). Floor because market rounds per unit, so an example 10*.95 9.5, but the market fee would be 1, therefore 9. 
+    // 5% market fee = (0.95*revenue).floor(). Floor because market rounds per unit, so an example 10*.95 9.5, but the market fee would be 1, therefore 9.
     // 1.05 is the default crafting great success chance.
     let profit = (0.95 * rev1).floor() * amt * 1.05 - cost;
     let cost_text = Text::new(format!("{:.2}", cost)).width(Length::FillPortion(1));
     let profit_text = Text::new(format!("{:.2}", profit)).width(Length::FillPortion(1));
-    let full_text = Text::new(format!("{:.2}", profit* 40.0)).width(Length::FillPortion(1));
+    let full_text = Text::new(format!("{:.2}", profit * 40.0)).width(Length::FillPortion(1));
     Row::new()
-        .push(image)
+        .push(item_row)
         .push(cost_text)
         .push(profit_text)
         .push(full_text)
@@ -131,10 +143,26 @@ where
 }
 pub fn get_crafted_cost_table(mat_costs: &HashMap<String, String>) -> Element<home::Message> {
     let handle = image::Handle::from_path("src/assets/images/ferris.png");
-    let ofm_price_entry = price_entry("src/assets/images/ferris.png", mat_costs, "ofm_price".to_string());
-    let sofm_price_entry = price_entry("src/assets/images/ferris.png", mat_costs, "sofm_price".to_string());
-    let pofm_price_entry = price_entry("src/assets/images/ferris.png", mat_costs, "pofm_price".to_string());
-    let afm_price_entry = price_entry("src/assets/images/ferris.png", mat_costs, "afm_price".to_string());
+    let ofm_price_entry = price_entry(
+        "src/assets/images/ofm.png",
+        mat_costs,
+        "ofm_price".to_string(),
+    );
+    let sofm_price_entry = price_entry(
+        "src/assets/images/sofm.png",
+        mat_costs,
+        "sofm_price".to_string(),
+    );
+    let pofm_price_entry = price_entry(
+        "src/assets/images/pofm.png",
+        mat_costs,
+        "pofm_price".to_string(),
+    );
+    let afm_price_entry = price_entry(
+        "src/assets/images/afm.png",
+        mat_costs,
+        "afm_price".to_string(),
+    );
 
     let fusion_mat_col = Column::new()
         .push(ofm_price_entry)
@@ -144,9 +172,21 @@ pub fn get_crafted_cost_table(mat_costs: &HashMap<String, String>) -> Element<ho
         .spacing(10)
         .padding(10);
 
-    let mhpp_price_entry = price_entry("src/assets/images/ferris.png", mat_costs, "mhpp_price".to_string());
-    let ehpp_price_entry = price_entry("src/assets/images/ferris.png", mat_costs, "ehpp_price".to_string());
-    let sehpp_price_entry = price_entry("src/assets/images/ferris.png", mat_costs, "sehpp_price".to_string());
+    let mhpp_price_entry = price_entry(
+        "src/assets/images/mhpp.png",
+        mat_costs,
+        "mhpp_price".to_string(),
+    );
+    let ehpp_price_entry = price_entry(
+        "src/assets/images/ehpp.png",
+        mat_costs,
+        "ehpp_price".to_string(),
+    );
+    let sehpp_price_entry = price_entry(
+        "src/assets/images/sehpp.png",
+        mat_costs,
+        "sehpp_price".to_string(),
+    );
     let hp_potion_col = Column::new()
         .push(mhpp_price_entry)
         .push(ehpp_price_entry)
@@ -157,11 +197,26 @@ pub fn get_crafted_cost_table(mat_costs: &HashMap<String, String>) -> Element<ho
     Row::new().push(fusion_mat_col).push(hp_potion_col).into()
 }
 pub fn get_mat_cost_table(mat_costs: &HashMap<String, String>) -> Element<home::Message> {
-
-    let clog_price_entry = price_entry("src/assets/images/clog.png", mat_costs, "clog_price".to_string());
-    let ulog_price_entry = price_entry("src/assets/images/ulog.png", mat_costs, "ulog_price".to_string());
-    let olog_price_entry = price_entry("src/assets/images/olog.png", mat_costs, "olog_price".to_string());
-    let alog_price_entry = price_entry("src/assets/images/alog.png", mat_costs, "alog_price".to_string());
+    let clog_price_entry = price_entry(
+        "src/assets/images/clog.png",
+        mat_costs,
+        "clog_price".to_string(),
+    );
+    let ulog_price_entry = price_entry(
+        "src/assets/images/ulog.png",
+        mat_costs,
+        "ulog_price".to_string(),
+    );
+    let olog_price_entry = price_entry(
+        "src/assets/images/olog.png",
+        mat_costs,
+        "olog_price".to_string(),
+    );
+    let alog_price_entry = price_entry(
+        "src/assets/images/alog.png",
+        mat_costs,
+        "alog_price".to_string(),
+    );
 
     let log_mat_col = Column::new()
         .push(clog_price_entry)
@@ -171,10 +226,26 @@ pub fn get_mat_cost_table(mat_costs: &HashMap<String, String>) -> Element<home::
         .spacing(10)
         .padding(10);
 
-    let cfish_price_entry = price_entry("src/assets/images/cfish.png", mat_costs, "cfish_price".to_string());
-    let ufish_price_entry = price_entry("src/assets/images/ufish.png", mat_costs, "ufish_price".to_string());
-    let ofish_price_entry = price_entry("src/assets/images/ofish.png", mat_costs, "ofish_price".to_string());
-    let afish_price_entry = price_entry("src/assets/images/afish.png", mat_costs, "afish_price".to_string());
+    let cfish_price_entry = price_entry(
+        "src/assets/images/cfish.png",
+        mat_costs,
+        "cfish_price".to_string(),
+    );
+    let ufish_price_entry = price_entry(
+        "src/assets/images/ufish.png",
+        mat_costs,
+        "ufish_price".to_string(),
+    );
+    let ofish_price_entry = price_entry(
+        "src/assets/images/ofish.png",
+        mat_costs,
+        "ofish_price".to_string(),
+    );
+    let afish_price_entry = price_entry(
+        "src/assets/images/afish.png",
+        mat_costs,
+        "afish_price".to_string(),
+    );
 
     let fish_mat_col = Column::new()
         .push(cfish_price_entry)
@@ -184,10 +255,26 @@ pub fn get_mat_cost_table(mat_costs: &HashMap<String, String>) -> Element<home::
         .spacing(10)
         .padding(10);
 
-    let crelic_price_entry = price_entry("src/assets/images/crelic.png", mat_costs, "crelic_price".to_string());
-    let urelic_price_entry = price_entry("src/assets/images/urelic.png", mat_costs, "urelic_price".to_string());
-    let orelic_price_entry = price_entry("src/assets/images/orelic.png", mat_costs, "orelic_price".to_string());
-    let arelic_price_entry = price_entry("src/assets/images/arelic.png", mat_costs, "arelic_price".to_string());
+    let crelic_price_entry = price_entry(
+        "src/assets/images/crelic.png",
+        mat_costs,
+        "crelic_price".to_string(),
+    );
+    let urelic_price_entry = price_entry(
+        "src/assets/images/urelic.png",
+        mat_costs,
+        "urelic_price".to_string(),
+    );
+    let orelic_price_entry = price_entry(
+        "src/assets/images/orelic.png",
+        mat_costs,
+        "orelic_price".to_string(),
+    );
+    let arelic_price_entry = price_entry(
+        "src/assets/images/arelic.png",
+        mat_costs,
+        "arelic_price".to_string(),
+    );
 
     let relic_mat_col = Column::new()
         .push(crelic_price_entry)
@@ -197,10 +284,26 @@ pub fn get_mat_cost_table(mat_costs: &HashMap<String, String>) -> Element<home::
         .spacing(10)
         .padding(10);
 
-    let cflow_price_entry = price_entry("src/assets/images/cflow.png", mat_costs, "cflow_price".to_string());
-    let uflow_price_entry = price_entry("src/assets/images/uflow.png", mat_costs, "uflow_price".to_string());
-    let oflow_price_entry = price_entry("src/assets/images/oflow.png", mat_costs, "oflow_price".to_string());
-    let aflow_price_entry = price_entry("src/assets/images/aflow.png", mat_costs, "aflow_price".to_string());
+    let cflow_price_entry = price_entry(
+        "src/assets/images/cflow.png",
+        mat_costs,
+        "cflow_price".to_string(),
+    );
+    let uflow_price_entry = price_entry(
+        "src/assets/images/uflow.png",
+        mat_costs,
+        "uflow_price".to_string(),
+    );
+    let oflow_price_entry = price_entry(
+        "src/assets/images/oflow.png",
+        mat_costs,
+        "oflow_price".to_string(),
+    );
+    let aflow_price_entry = price_entry(
+        "src/assets/images/aflow.png",
+        mat_costs,
+        "aflow_price".to_string(),
+    );
 
     let flow_mat_col = Column::new()
         .push(cflow_price_entry)
@@ -210,10 +313,26 @@ pub fn get_mat_cost_table(mat_costs: &HashMap<String, String>) -> Element<home::
         .spacing(10)
         .padding(10);
 
-    let cmeat_price_entry = price_entry("src/assets/images/cmeat.png", mat_costs, "cmeat_price".to_string());
-    let umeat_price_entry = price_entry("src/assets/images/umeat.png", mat_costs, "umeat_price".to_string());
-    let omeat_price_entry = price_entry("src/assets/images/omeat.png", mat_costs, "omeat_price".to_string());
-    let ameat_price_entry = price_entry("src/assets/images/ameat.png", mat_costs, "ameat_price".to_string());
+    let cmeat_price_entry = price_entry(
+        "src/assets/images/cmeat.png",
+        mat_costs,
+        "cmeat_price".to_string(),
+    );
+    let umeat_price_entry = price_entry(
+        "src/assets/images/umeat.png",
+        mat_costs,
+        "umeat_price".to_string(),
+    );
+    let omeat_price_entry = price_entry(
+        "src/assets/images/omeat.png",
+        mat_costs,
+        "omeat_price".to_string(),
+    );
+    let ameat_price_entry = price_entry(
+        "src/assets/images/ameat.png",
+        mat_costs,
+        "ameat_price".to_string(),
+    );
 
     let meat_mat_col = Column::new()
         .push(cmeat_price_entry)
@@ -223,10 +342,26 @@ pub fn get_mat_cost_table(mat_costs: &HashMap<String, String>) -> Element<home::
         .spacing(10)
         .padding(10);
 
-    let core_price_entry = price_entry("src/assets/images/core.png", mat_costs, "core_price".to_string());
-    let uore_price_entry = price_entry("src/assets/images/uore.png", mat_costs, "uore_price".to_string());
-    let oore_price_entry = price_entry("src/assets/images/oore.png", mat_costs, "oore_price".to_string());
-    let aore_price_entry = price_entry("src/assets/images/aore.png", mat_costs, "aore_price".to_string());
+    let core_price_entry = price_entry(
+        "src/assets/images/core.png",
+        mat_costs,
+        "core_price".to_string(),
+    );
+    let uore_price_entry = price_entry(
+        "src/assets/images/uore.png",
+        mat_costs,
+        "uore_price".to_string(),
+    );
+    let oore_price_entry = price_entry(
+        "src/assets/images/oore.png",
+        mat_costs,
+        "oore_price".to_string(),
+    );
+    let aore_price_entry = price_entry(
+        "src/assets/images/aore.png",
+        mat_costs,
+        "aore_price".to_string(),
+    );
 
     let ore_mat_col = Column::new()
         .push(core_price_entry)
@@ -265,11 +400,11 @@ pub fn get_crafting_cost_table(mat_costs: &HashMap<String, String>) -> Element<h
         .push(profit_text)
         .push(full_text);
 
-    let handle = image::Handle::from_path("src/assets/images/ferris.png");
     let formula = |a: f32, b: f32, c: f32| 400.0 + 0.86 * a + 0.45 * b + 0.33 * c;
 
     let log_entry = crafting_entry(
-        handle.clone(),
+        "src/assets/images/afm.png",
+        "src/assets/images/alog.png",
         mat_costs
             .get("clog_price")
             .and_then(|s| s.parse::<f32>().ok())
@@ -290,7 +425,8 @@ pub fn get_crafting_cost_table(mat_costs: &HashMap<String, String>) -> Element<h
         formula,
     );
     let fish_entry = crafting_entry(
-        handle.clone(),
+        "src/assets/images/afm.png",
+        "src/assets/images/afish.png",
         mat_costs
             .get("cfish_price")
             .and_then(|s| s.parse::<f32>().ok())
@@ -311,7 +447,8 @@ pub fn get_crafting_cost_table(mat_costs: &HashMap<String, String>) -> Element<h
         formula,
     );
     let relic_entry = crafting_entry(
-        handle.clone(),
+        "src/assets/images/afm.png",
+        "src/assets/images/arelic.png",
         mat_costs
             .get("crelic_price")
             .and_then(|s| s.parse::<f32>().ok())
@@ -332,7 +469,8 @@ pub fn get_crafting_cost_table(mat_costs: &HashMap<String, String>) -> Element<h
         formula,
     );
     let flow_entry = crafting_entry(
-        handle.clone(),
+        "src/assets/images/afm.png",
+        "src/assets/images/aflow.png",
         mat_costs
             .get("cflow_price")
             .and_then(|s| s.parse::<f32>().ok())
@@ -353,7 +491,8 @@ pub fn get_crafting_cost_table(mat_costs: &HashMap<String, String>) -> Element<h
         formula,
     );
     let meat_entry = crafting_entry(
-        handle.clone(),
+        "src/assets/images/afm.png",
+        "src/assets/images/ameat.png",
         mat_costs
             .get("cmeat_price")
             .and_then(|s| s.parse::<f32>().ok())
@@ -374,7 +513,8 @@ pub fn get_crafting_cost_table(mat_costs: &HashMap<String, String>) -> Element<h
         formula,
     );
     let ore_entry = crafting_entry(
-        handle.clone(),
+        "src/assets/images/afm.png",
+        "src/assets/images/aore.png",
         mat_costs
             .get("core_price")
             .and_then(|s| s.parse::<f32>().ok())
